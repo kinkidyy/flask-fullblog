@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .post-container {
+        background: rgba(255, 248, 220, 0.95);
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(139, 69, 19, 0.1);
+        padding: 2rem;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .post-title {
+        font-family: 'Playfair Display', serif;
+        color: var(--primary-brown-red);
+    }
+
+    .post-meta {
+        font-size: 0.9rem;
+        color: var(--deep-charcoal);
+        margin-bottom: 1rem;
+    }
+
+    .post-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: var(--deep-charcoal);
+    }
+
+    .post-content img {
+        max-width: 100%;
+        margin: 20px 0;
+        border-radius: 8px;
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        display: inline-block;
+        color: var(--secondary-sienna);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .back-link:hover {
+        color: var(--primary-brown-red);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <article class="post-container">
+        <h1 class="post-title">{{ post.title }}</h1>
+        <p class="post-meta">
+            By {{ post.author.username }} | {{ post.created_at.strftime('%b %d, %Y') }}
+            {% if post.views %} | {{ post.views }} views{% endif %}
+        </p>
+
+        {% if post.media_filename %}
+            <img src="{{ url_for('blog.media', filename=post.media_filename) }}" 
+                 alt="{{ post.title }}">
+        {% endif %}
+
+        <div class="post-content">
+            {{ post.content | safe }}
+        </div>
+
+        <a href="{{ url_for('blog.index') }}" class="back-link">&larr; Back to all posts</a>
+    </article>
+</div>
+{% endblock %}

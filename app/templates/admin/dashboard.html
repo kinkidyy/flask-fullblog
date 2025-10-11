@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Custom CSS for the dashboard -->
+<style>
+    body.dashboard-bg {
+        background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+        min-height: 100vh;
+    }
+    .card-post {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card-post:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .btn-add-category {
+        background-color: #007bff;
+        color: white;
+        transition: background-color 0.3s;
+    }
+    .btn-add-category:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+    .editable-input {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+        width: 100%;
+    }
+    .table th, .table td {
+        vertical-align: middle !important;
+    }
+    .save-btn {
+        background-color: #28a745;
+        border: none;
+    }
+    .save-btn:hover {
+        background-color: #218838;
+    }
+    .delete-btn {
+        background-color: #dc3545;
+    }
+    .delete-btn:hover {
+        background-color: #c82333;
+    }
+    .publish-btn {
+        background-color: #ffc107;
+        color: #212529;
+        border-color: #ffc107;
+    }
+    .publish-btn:hover {
+        background-color: #e0a800;
+        color: #212529;
+    }
+    .publish-btn.published {
+        background-color: #28a745;
+        color: white;
+        border-color: #28a745;
+    }
+    .publish-btn.published:hover {
+        background-color: #218838;
+        color: white;
+    }
+    .publish-all-btn {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .publish-all-btn:hover {
+        background-color: #138496;
+        color: white;
+    }
+</style>
+
+<div class="dashboard-bg container-fluid py-5">
+
+    <h2 class="text-center mb-5 text-primary">Admin Dashboard</h2>
+
+    <!-- Add New Category Button & New Post Button -->
+    <div class="d-flex justify-content-between mb-3 flex-wrap">
+        <div class="d-flex flex-wrap">
+            <!-- Fixed: Use add_category endpoint (no ID needed) -->
+            <form action="{{ url_for('admin.add_category') }}" method="POST" class="d-flex me-2 mb-2">
+                <input type="text" name="name" placeholder="New Category Name" class="form-control me-2" required>
+                <button type="submit" class="btn btn-add-category">Add Category</button>
+            </form>
+
+            <!-- New Post Button -->
+            <a href="{{ url_for('admin.new_post') }}" class="btn btn-success mb-2">
+                Add New Post
+            </a>
+        </div>
+
+        <!-- Category Filter -->
+        <select class="form-select w-auto mb-2" id="categoryFilter" aria-label="Filter posts by category">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Categories Management Table -->
+    <h3 class="mb-3">Manage Categories</h3>
+    <div class="table-responsive mb-4">
+        <table class="table table-hover table-bordered bg-white shadow-sm">
+            <thead class="table-primary">
+                <tr>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categories %}
+                <tr>
+                    <td>
+                        <form action="{{ url_for('admin.edit_category', category_id=cat.id) }}" method="POST" class="d-inline">
+                            <input type="text" name="name" value="{{ cat.name }}" class="form-control d-inline-block w-auto me-2" required>
+                            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form action="{{ url_for('admin.delete_category', category_id=cat.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete {{ cat.name }}?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Manage Posts</h3>
+        <!-- New: Publish All Drafts Button (shows only if drafts exist; pass 'has_drafts' from view if needed) -->
+        <form action="{{ url_for('admin.publish_all') }}" method="POST" style="display: inline;" onsubmit="return confirm('Publish all draft posts? This will make them live on the blog!');">
+            <button type="submit" class="btn publish-all-btn">Publish All Drafts</button>
+        </form>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered bg-white shadow-sm" role="table" aria-label="Posts management table">
+            <thead class="table-primary">
+                <tr>
+                    <th>Title</th>
+                    <th>Content</th>
+                    <th>Category</th>
+                    <th>Author</th>
+                    <th>Created At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="postsTable">
+                {% for post in posts %}
+                <tr data-category="{{ post.category_id or '' }}" data-post-id="{{ post.id }}">
+                    <td>
+                        <input type="text" class="editable-input title-input" value="{{ post.title | e }}" data-field="title">
+                    </td>
+                    <td>
+                        <textarea class="editable-input content-input" rows="3" data-field="content">{{ post.content | e }}</textarea>
+                    </td>
+                    <td>
+                        <select class="form-select editable-input category-select" data-field="category_id">
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if cat.id|string == (post.category_id|string) %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select editable-input author-select" data-field="author_id">
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if user.id == post.author_id %}selected{% endif %}>{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>{{ post.created_at }}</td>
+                    <td>
+                        <span class="badge {{ 'bg-success' if post.status == 'published' else 'bg-secondary' }}">{{ post.status | title }}</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm save-btn" onclick="savePost(this)">Save</button>
+                        {% if post.status == 'published' %}
+                            <button type="button" class="btn btn-sm publish-btn published" onclick="togglePublish({{ post.id }}, false)">Unpublish</button>
+                        {% else %}
+                            <button type="button" class="btn btn-sm publish-btn" onclick="togglePublish({{ post.id }}, true)">Publish</button>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm delete-btn" onclick="confirmDelete({{ post.id }})">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- JavaScript (unchanged from before) -->
+<script>
+    // Filter Posts by Category
+    const categoryFilter = document.getElementById('categoryFilter');
+    const postsTable = document.getElementById('postsTable');
+    categoryFilter.addEventListener('change', function() {
+        const value = this.value;
+        const rows = postsTable.querySelectorAll('tr');
+        rows.forEach(row => {
+            if (!value || row.dataset.category === value) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // AJAX Save Function
+    async function savePost(button) {
+        const row = button.closest('tr');
+        const postId = row.dataset.postId;
+        const formData = new FormData();
+        formData.append('title', row.querySelector('.title-input').value);
+        formData.append('content', row.querySelector('.content-input').value);
+        formData.append('category_id', row.querySelector('.category-select').value);
+
+        try {
+            const response = await fetch(`/admin/update_post/${postId}`, {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                alert('Post updated successfully!');
+                button.textContent = 'Saved';
+                setTimeout(() => button.textContent = 'Save', 2000);
+            } else {
+                alert('Error saving post.');
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    }
+
+    // Publish/Unpublish Toggle
+    async function togglePublish(postId, publish) {
+        const action = publish ? 'publish' : 'unpublish';
+        if (!confirm(`Are you sure you want to ${action} this post?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/${action}_post/${postId}`, {
+                method: 'POST'
+            });
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert(`Error ${action}ing post.`);
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    }
+
+    // Delete Confirmation
+    function confirmDelete(postId) {
+        if (confirm('Are you sure you want to delete this post?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/post/delete/${postId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // Visual feedback on edit
+    document.querySelectorAll('.editable-input').forEach(input => {
+        input.addEventListener('blur', function() {
+            this.style.borderColor = '#28a745';
+            setTimeout(() => this.style.borderColor = '#ccc', 1000);
+        });
+    });
+</script>
+
+{% endblock %}

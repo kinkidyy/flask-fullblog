@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Post{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Create New Post</h2>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('admin.new_post') }}" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" class="form-control" id="title" name="title" placeholder="Enter post title" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="content" class="form-label">Content</label>
+            <textarea class="form-control" id="content" name="content" rows="6" placeholder="Write your post here..." required></textarea>
+        </div>
+
+        <!-- Media Upload Field -->
+        <div class="mb-3">
+            <label for="media" class="form-label">Media (Image or Video - Optional)</label>
+            <input type="file" class="form-control" id="media" name="media" accept="image/*,video/*">
+            <div class="form-text">Upload an image or video for your post (max 5MB).</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="category_id" class="form-label">Category</label>
+            <div class="input-group">
+                <select class="form-select" id="category_id" name="category_id" required>
+                    <option value="">-- Select Category --</option>
+                    {% set default_categories = ['general', 'politics', 'religion', 'sport', 'entertainment', 'Naija gist'] %}
+                    {% for cat in default_categories %}
+                        <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                    {% endfor %}
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name|capitalize }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add New Category</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Create Post</button>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('admin.edit_category') }}">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <label for="new_category" class="form-label">Category Name</label>
+            <input type="text" class="form-control" id="new_category" name="name" placeholder="Enter category name" required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Category</button>
+          </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Optional: Auto-focus on modal input when opened
+    var addCategoryModal = document.getElementById('addCategoryModal')
+    addCategoryModal.addEventListener('shown.bs.modal', function () {
+      document.getElementById('new_category').focus()
+    })
+</script>
+{% endblock %}
