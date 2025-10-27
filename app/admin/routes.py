@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort,current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
 from flask_login import current_user
 from ..models import Post, Category, User
 from .. import db, login_manager
@@ -7,9 +7,6 @@ from datetime import datetime
 from functools import wraps
 import os
 from slugify import slugify
-
-# Add this if not already imported for file paths
-
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -43,7 +40,7 @@ def dashboard():
             "title": post.title,
             "content": post.content,
             "category": post.category.name if post.category else "Uncategorized",
-            "author": post.author.username if post.author else "Unknown",
+            "user": post.user.username if post.user else "Unknown",
             "created_at": post.created_at.strftime("%Y-%m-%d %H:%M"),
             "status": getattr(post, 'status', 'published'),
             "views": getattr(post, 'views', 0),
@@ -59,16 +56,15 @@ def dashboard():
 @admin_bp.route("/new-post", methods=["GET", "POST"])
 @admin_required
 def new_post():
-    categories = Category.query.all()  # Query the list
-    
-    # Optional: One-time creation of default categories if they don't exist
+    categories = Category.query.all()
+
+    # Ensure default categories exist
     default_names = ['general', 'politics', 'religion', 'sport', 'entertainment', 'Naija gist']
     for name in default_names:
         if not Category.query.filter_by(name=name).first():
-            default_cat = Category(name=name)
-            db.session.add(default_cat)
+            db.session.add(Category(name=name))
             db.session.commit()
-    
+
     if request.method == 'POST':
         title = request.form.get('title')
         content = request.form.get('content')
@@ -78,14 +74,15 @@ def new_post():
             flash("All fields are required.", "danger")
             return redirect(url_for('admin.new_post'))
 
-        # Handle both int IDs (from DB) and str names (from hardcoded defaults)
+        # Handle both IDs and string names for categories
         category = Category.query.filter_by(id=category_id).first() or Category.query.filter_by(name=category_id).first()
         if not category:
             flash("Invalid category selected.", "danger")
             return redirect(url_for('admin.new_post'))
-        
-        category_id = category.id  # Use the actual ID
 
+        category_id = category.id
+
+        # Create unique slug
         base_slug = slugify(title)
         slug = base_slug
         counter = 1
@@ -93,42 +90,45 @@ def new_post():
             slug = f"{base_slug}-{counter}"
             counter += 1
 
-        # Handle media upload
+        # ----------------------------
+        # File Upload (Debug Enabled)
+        # ----------------------------
         media_filename = None
-        if 'media' in request.files:
-            file = request.files['media']
-            if file.filename != '':  # File was selected
-                # Secure and validate filename
-                filename = secure_filename(file.filename)
-                if filename:  # Valid file
-                    # Add timestamp to avoid duplicates
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    name, ext = os.path.splitext(filename)
-                    unique_filename = f"{name}_{timestamp}{ext}"
-                    
-                    # Define upload folder
-                    upload_folder = os.path.join('static', 'uploads', 'media')
-                    os.makedirs(os.path.join(current_app.root_path, upload_folder), exist_ok=True)  # Create if missing
-                    
-                    # Full path
-                    file_path = os.path.join(current_app.root_path, upload_folder, unique_filename)
-                    file.save(file_path)
-                    
-                    media_filename = unique_filename  # Store just the filename in DB
-                    flash('Media uploaded successfully!', 'success')
+        file = request.files.get('media')
+        print("🔍 File received:", file)  # Debug print
 
-        # Create Post with all fields
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            if filename:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                name, ext = os.path.splitext(filename)
+                unique_filename = f"{name}_{timestamp}{ext}"
+
+                # Safer path resolution
+                upload_folder = os.path.join(current_app.static_folder, 'uploads', 'media')
+                os.makedirs(upload_folder, exist_ok=True)
+
+                file_path = os.path.join(upload_folder, unique_filename)
+                print("💾 Saving to:", file_path)  # Debug print
+                file.save(file_path)
+
+                media_filename = unique_filename
+                flash('Media uploaded successfully!', 'success')
+        else:
+            print("⚠️ No file uploaded or invalid field name")
+
+        # Create new post
         post = Post(
             title=title,
             slug=slug,
             content=content,
             category_id=category_id,
-            author_id=current_user.id,
-            created_at=datetime.utcnow(),  # Fix: Proper datetime
-            updated_at=datetime.utcnow(),  # Fix: Proper datetime
+            user_id=current_user.id,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             status='published',
             views=0,
-            media_filename=media_filename  # From upload or None
+            media_filename=media_filename
         )
         db.session.add(post)
         db.session.commit()
@@ -136,30 +136,29 @@ def new_post():
         flash("New post added successfully!", "success")
         return redirect(url_for('admin.dashboard'))
 
-    return render_template('admin/new_post.html', categories=categories)  # Pass the actual list
+    return render_template('admin/new_post.html', categories=categories)
 
 # ===============================
 # Edit Category (Dual: Edit with ID, Add without)
 # ===============================
-@admin_bp.route('/category/edit/', methods=['POST'])  # For create (no ID, POST only)
-@admin_bp.route('/category/edit/<int:category_id>', methods=['GET', 'POST'])  # For edit
+@admin_bp.route('/category/edit/', methods=['POST'])
+@admin_bp.route('/category/edit/<int:category_id>', methods=['GET', 'POST'])
 @admin_required
-def edit_category(category_id=None):  # Optional param
-    if category_id:  # Editing existing
+def edit_category(category_id=None):
+    if category_id:
         category = Category.query.get_or_404(category_id)
         is_edit = True
-    else:  # Adding new (no ID)
+    else:
         category = None
         is_edit = False
-    
+
     if request.method == 'POST':
         new_name = request.form.get('name', '').strip()
         if not new_name:
             flash('Category name required', 'error')
-            return redirect(url_for('admin.new_post'))  # Redirect to new_post for modal context
-        
+            return redirect(url_for('admin.new_post'))
+
         if is_edit:
-            # Check duplicate excluding self
             if Category.query.filter(Category.name == new_name, Category.id != category_id).first():
                 flash('Category name already exists.', 'error')
                 return redirect(url_for('admin.new_post'))
@@ -167,7 +166,6 @@ def edit_category(category_id=None):  # Optional param
             db.session.commit()
             flash('Category updated successfully!', 'success')
         else:
-            # Create new
             if Category.query.filter_by(name=new_name).first():
                 flash('Category name already exists.', 'error')
                 return redirect(url_for('admin.new_post'))
@@ -175,18 +173,16 @@ def edit_category(category_id=None):  # Optional param
             db.session.add(new_category)
             db.session.commit()
             flash('Category added successfully!', 'success')
-        
-        return redirect(url_for('admin.new_post'))  # Back to new_post to see updated dropdown
-    
-    # For GET requests (edit only)
+
+        return redirect(url_for('admin.new_post'))
+
     if category_id and request.method == 'GET':
         return render_template("admin/edit_category.html", category=category)
-    
-    # If GET to /category/edit/ (no ID), redirect
+
     return redirect(url_for('admin.new_post'))
 
 # ===============================
-# Add Category (Deprecated: Keep if used elsewhere)
+# Add Category (Deprecated)
 # ===============================
 @admin_bp.route('/add_category', methods=['POST'])
 @admin_required

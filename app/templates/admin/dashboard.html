@@ -1,77 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Custom CSS for the dashboard -->
-<style>
-    body.dashboard-bg {
-        background: linear-gradient(to right, #f0f4f8, #d9e2ec);
-        min-height: 100vh;
-    }
-    .card-post {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card-post:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-    .btn-add-category {
-        background-color: #007bff;
-        color: white;
-        transition: background-color 0.3s;
-    }
-    .btn-add-category:hover {
-        background-color: #0056b3;
-        color: white;
-    }
-    .editable-input {
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 5px;
-        width: 100%;
-    }
-    .table th, .table td {
-        vertical-align: middle !important;
-    }
-    .save-btn {
-        background-color: #28a745;
-        border: none;
-    }
-    .save-btn:hover {
-        background-color: #218838;
-    }
-    .delete-btn {
-        background-color: #dc3545;
-    }
-    .delete-btn:hover {
-        background-color: #c82333;
-    }
-    .publish-btn {
-        background-color: #ffc107;
-        color: #212529;
-        border-color: #ffc107;
-    }
-    .publish-btn:hover {
-        background-color: #e0a800;
-        color: #212529;
-    }
-    .publish-btn.published {
-        background-color: #28a745;
-        color: white;
-        border-color: #28a745;
-    }
-    .publish-btn.published:hover {
-        background-color: #218838;
-        color: white;
-    }
-    .publish-all-btn {
-        background-color: #17a2b8;
-        color: white;
-    }
-    .publish-all-btn:hover {
-        background-color: #138496;
-        color: white;
-    }
-</style>
 
 <div class="dashboard-bg container-fluid py-5">
 
@@ -169,9 +98,9 @@
                         </select>
                     </td>
                     <td>
-                        <select class="form-select editable-input author-select" data-field="author_id">
+                        <select class="form-select editable-input author-select" data-field="user_id">
                             {% for user in users %}
-                                <option value="{{ user.id }}" {% if user.id == post.author_id %}selected{% endif %}>{{ user.username }}</option>
+                                <option value="{{ user.id }}" {% if user.id == post.user_id %}selected{% endif %}>{{ user.username }}</option>
                             {% endfor %}
                         </select>
                     </td>

@@ -12,9 +12,12 @@ class User(db.Model, UserMixin):
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+   
+
     # Fixed: Use only back_populates
-    posts = db.relationship("Post", back_populates="author", lazy=True)
+    posts = db.relationship("Post", back_populates="user", lazy=True)
     comments = db.relationship("Comment", back_populates="user", lazy=True)
+    replies = db.relationship("Reply", back_populates="user", lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -43,18 +46,23 @@ class Post(db.Model):
     content = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default="draft")
     views = db.Column(db.Integer, default=0)
+    likes = db.Column(db.Integer, default=0)
     media_filename = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=func.now)
-    updated_at = datetime.utcnow()
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+
 
     # Foreign keys
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"), nullable=True)
-    author_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     # Relationships
-    author = db.relationship("User", back_populates="posts")
+    user = db.relationship("User", back_populates="posts")
     category = db.relationship("Category", back_populates="posts")
     comments = db.relationship("Comment", back_populates="post", lazy=True, cascade="all, delete-orphan")
+    likes_rel = db.relationship("PostLike", backref="post", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Post {self.title}>"
@@ -63,7 +71,8 @@ class Post(db.Model):
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=func.now)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    likes = db.Column(db.Integer, default=0)
 
     # Foreign keys
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -72,6 +81,43 @@ class Comment(db.Model):
     # Relationships
     user = db.relationship("User", back_populates="comments", lazy=True)
     post = db.relationship("Post", back_populates="comments", lazy=True)
+    replies = db.relationship("Reply", back_populates="comment", lazy=True, cascade="all, delete-orphan")
+    likes_rel = db.relationship("CommentLike", backref="comment", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Comment {self.id}>"
+    
+
+class Reply(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow) 
+
+    # Foreign keys
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    comment_id = db.Column(db.Integer, db.ForeignKey("comment.id"), nullable=False)
+
+    # Relationships
+    user = db.relationship("User", back_populates="replies", lazy=True)
+    comment = db.relationship("Comment", back_populates="replies", lazy=True)
+
+
+class PostLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'post_id', name='_user_post_like_uc'),)
+
+    
+
+
+class CommentLike(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    comment_id = db.Column(db.Integer, db.ForeignKey("comment.id"), nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'comment_id', name='_user_comment_like_uc'),)
+
+
+    def __repr__(self):
+        return f"<Reply {self.id}>"
+

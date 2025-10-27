@@ -4,118 +4,9 @@
 
 {% block extra_css %}
 <style>
-    :root {
-        --primary-brown-red: #8B4513; /* Saddle Brown - sophisticated earthy base */
-        --secondary-sienna: #A0522D; /* Sienna accent for warmth */
-        --light-cream: #FFF8DC; /* Light cream for readability */
-        --deep-charcoal: #2C1810; /* Muted dark for text */
-        --gold-accent: #DAA520; /* Golden highlight for elegance */
-        --shadow-subtle: 0 4px 8px rgba(139, 69, 19, 0.1); /* Brown-tinted shadow */
-    }
+    
 
-    body {
-        background: linear-gradient(135deg, var(--primary-brown-red) 0%, var(--secondary-sienna) 50%, var(--light-cream) 100%);
-        background-attachment: fixed;
-        color: var(--deep-charcoal);
-        font-family: 'Open Sans', sans-serif;
-        line-height: 1.6;
-        min-height: 100vh;
-    }
-
-    .container {
-        background: rgba(255, 248, 220, 0.95); /* Semi-transparent cream overlay for contrast */
-        border-radius: 12px;
-        box-shadow: var(--shadow-subtle);
-        margin-top: 20px;
-        margin-bottom: 20px;
-        padding: 2rem;
-        backdrop-filter: blur(10px); /* Subtle blur for sophistication */
-    }
-
-    header h1 {
-        font-family: 'Playfair Display', serif;
-        color: var(--primary-brown-red);
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-    }
-
-    header h1:hover {
-        transform: scale(1.02); /* Subtle interactive hover */
-    }
-
-    .post {
-        background: white;
-        border: 1px solid var(--light-cream);
-        border-radius: 8px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .post:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-subtle);
-        border-color: var(--secondary-sienna);
-    }
-
-    .post h2 a {
-        color: var(--deep-charcoal);
-        text-decoration: none;
-        font-family: 'Playfair Display', serif;
-        transition: color 0.3s ease;
-    }
-
-    .post h2 a:hover {
-        color: var(--secondary-sienna);
-    }
-
-    .post img {
-        transition: transform 0.3s ease;
-    }
-
-    .post img:hover {
-        transform: scale(1.05);
-    }
-
-    .btn-primary {
-        background-color: var(--secondary-sienna);
-        border-color: var(--secondary-sienna);
-        transition: all 0.3s ease;
-    }
-
-    .btn-primary:hover {
-        background-color: var(--primary-brown-red);
-        border-color: var(--primary-brown-red);
-        transform: translateY(-2px);
-    }
-
-    .pagination .page-link {
-        color: var(--secondary-sienna);
-        border-color: var(--light-cream);
-    }
-
-    .pagination .page-link:hover {
-        background-color: var(--secondary-sienna);
-        color: white;
-    }
-
-    .form-control, .form-select {
-        border-color: var(--light-cream);
-        transition: border-color 0.3s ease;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: var(--secondary-sienna);
-        box-shadow: 0 0 0 0.2rem rgba(160, 82, 45, 0.25);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .container {
-            margin: 10px;
-            padding: 1rem;
-        }
-    }
+    
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 {% endblock %}
@@ -157,13 +48,13 @@
                             <a href="{{ url_for('blog.view_post', slug=post.slug) }}">{{ post.title }}</a>
                         </h2>
                         <p class="text-muted small mb-3">
-                            By {{ post.author.username }} | {{ post.created_at.strftime('%b %d, %Y') }}
+                            By {{ post.user.username }} | {{ post.created_at.strftime('%b %d, %Y') }}
                             {% if post.views %} | {{ post.views }} views{% endif %}
                         </p>
                         {% if post.media_filename %}
-                            <img src="{{ url_for('blog.media', filename=post.media_filename) }}" 
-                                 alt="{{ post.title }}" 
-                                 class="img-fluid mb-3 rounded">
+                            <img src="{{ url_for('static', filename='uploads/media/' + post.media_filename) }}" alt="{{ post.title }}">
+
+                                 
                         {% endif %}
                         <p class="lead mb-3">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
                         <a href="{{ url_for('blog.view_post', slug=post.slug) }}" class="btn btn-primary">Read more</a>
