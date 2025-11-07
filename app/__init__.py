@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail
+from flask_pymongo import PyMongo
 import os
 
 # Initialize extensions
@@ -12,6 +13,7 @@ migrate = Migrate()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
 mail = Mail()
+mongo = PyMongo()
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -19,6 +21,8 @@ def create_app():
     # Load configuration
     app.config.from_object('config.Config')
     app.config['SECRET_KEY'] = app.config.get('SECRET_KEY', 'your-super-secret-key')
+    app.config["MONGO_URI"] = "mongodb+srv://kinkidycodes_db_user:OEWQOMMnhCVpi1nq@cluster0.gr5gqyd.mongodb.net/?appName=Cluster0"
+    mongo.init_app(app)
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
 
     # Initialize extensions
@@ -27,7 +31,9 @@ def create_app():
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
+    mongo.init_app(app)
 
+  
     # Flask-Login settings
     login_manager.login_view = 'auth.login'   # redirect here if not logged in
     login_manager.login_message_category = 'info'
@@ -56,3 +62,4 @@ def create_app():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     return app
+

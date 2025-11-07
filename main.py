@@ -9,7 +9,7 @@ app = create_app()
 @app.route('/')
 def home():
     # For now, don't fetch from MongoDB — just verify the template works
-    return render_template('blog/index.html')
+    return render_template('/blog')
 
 if __name__ == '__main__':
     app.run(debug=True)
