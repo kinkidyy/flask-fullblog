@@ -1,13 +1,15 @@
-import os
-from flask import Flask
+from flask import Flask, render_template
+from app import create_app
+from app.models import db
 
-app = Flask(__name__)
+# Create the app
+app = create_app()
 
+# Homepage route
 @app.route('/')
-def hello():
-    return "Hello — running on Render!"
+def home():
+    # For now, don't fetch from MongoDB — just verify the template works
+    return render_template('blog/index.html')
 
-# Only used if you run with `python main.py` locally.
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(debug=True)

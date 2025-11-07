@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongoose": "^8.19.2",
+    "sqlite3": "^5.1.7"
+  },
+  "name": "flask-fullblog",
+  "version": "1.0.0",
+  "description": "This is a full-featured Flask blogging platform (Linda-Ikeji-inspired) scaffolded with many features: - Authentication (users, admin) - Posts with media (image/video/audio) - Categories & Tags - Drafts & scheduled publishing - Comments with edit/delete and moderation - Search, pagination, related posts, views counter - Admin dashboard, REST API endpoints - Dockerfile + docker-compose (example)",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kinkidyy/flask-fullblog.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kinkidyy/flask-fullblog/issues"
+  },
+  "homepage": "https://github.com/kinkidyy/flask-fullblog#readme"
+}
