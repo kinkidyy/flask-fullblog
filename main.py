@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import redirect, url_for
 from app import create_app
 from app.models import db
 
@@ -9,7 +9,7 @@ app = create_app()
 @app.route('/')
 def home():
     # For now, don't fetch from MongoDB — just verify the template works
-    return render_template('/blog')
+    return redirect(url_for('blog.index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
